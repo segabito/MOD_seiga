@@ -44,10 +44,10 @@
 
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
-        this.addStyle(__css__, 'NicorenizerCss');
+        this.addStyle(__css__, 'MOD_seigaCss');
       },
       initializeUserConfig: function() {
-        var prefix = 'Nicorenizer_';
+        var prefix = 'MOD_Seiga_';
         var conf = {};
         this.config = {
           get: function(key) {
