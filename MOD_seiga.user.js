@@ -3,9 +3,13 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.0.1
+// @version     0.0.2
 // @grant       none
 // ==/UserScript==
+
+// ver 0.0.2
+// - ホバーしなくてもタイトルと説明文が出るように
+// - 見えないところでタグが増殖していたのを修正
 
 // ver 0.0.1 最初のバージョン
 
@@ -23,6 +27,7 @@
         this.initializeBaseLayout();
         this.initializeDescription();
         this.initializeKnockout();
+        this.initializeOther();
 
         this.initializeCss();
       },
@@ -40,15 +45,37 @@
         return elm;
       },
       initializeCss: function() {
-        var __css__ = (function() {/*
+        var __common_css__ = (function() {/*
 
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
-        this.addStyle(__css__, 'MOD_seigaCss');
+        var __css__ = (function() {/*
+        .list_item_cutout.large {
+          height: 194px;
+        }
+        .list_item_cutout.large a {
+          height: 194px;
+          overflow: visible;
+        }
+        .list_item_cutout.large a .illust_info, .list_item_cutout.large a .illust_info:hover {
+          bottom: 0px;
+        }
+
+        */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
+        
+
+          this.addStyle(__common_css__);
+
+        if (this.config.get('applyCss')) {
+          this.addStyle(__css__);
+        }
       },
       initializeUserConfig: function() {
         var prefix = 'MOD_Seiga_';
-        var conf = {};
+        var conf = {
+          applyCss: true
+        };
+
         this.config = {
           get: function(key) {
             try {
@@ -67,7 +94,7 @@
       },
       initializeBaseLayout: function() {
         var $illust_main = $('.illust_main:first').detach();
-        $('#detail .illust_info').after($illust_main);
+        $('#detail .illust_info:first').after($illust_main);
       },
       initializeDescription: function() {
         var $description = $('#detail .description, #detail .discription');
@@ -93,6 +120,9 @@
       },
       initializeKnockout: function() {
 
+      },
+      initializeOther: function() {
+        $('body').addClass('MOD_Seiga');
       }
     };
 
