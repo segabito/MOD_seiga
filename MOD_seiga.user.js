@@ -3,10 +3,13 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.1.0
+// @version     0.2.0
 // @grant       none
 // ==/UserScript==
 
+
+// ver 0.2.0
+// - 動かなくなっていたのでとりあえずまた動くようにした
 
 // ver 0.1.0
 // - 設定パネルを追加
@@ -131,55 +134,31 @@
           {*background: #ccc;{* debug *}
         }
 
-        {* ユーザー情報 *}
-        #detail .illust_info  #ko_watchlist_info.user {
-          {*position: absolute;
-          right: 0;
-          bottom: 58px;*}
-          float: right;
-          padding: 4px 4px 0;
-          background: #f8f8f8;
-          box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
-        }
-        #detail .illust_info  #ko_watchlist_info.user ul li.thum {
-          padding-right: 10px;
-          width: 60px;
-        }
-        #detail .illust_info  #ko_watchlist_info.user ul li.thum img {
-          width: 60px;
-          box-shadow: 2px 2px 2px #DDD;
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li.user_name {
-          padding-right: 10px;
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li.user_name h2 {
-          display: none;
-          {*color: #666666;
-          display: inline;
-          font-size: 83.3%;
-          font-weight: normal;
-          margin-right: 5px;*}
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li {
-          display: table-cell;
-          vertical-align: middle;
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li.user_name a {
-          color: #000000;
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li.user_name a strong {
-          font-size: 15px;
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li {
-          display: table-cell;
-          vertical-align: middle;
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li.user_favorite {
-        }
-        #detail .illust_info #ko_watchlist_info.user ul li .btn.big, a.btn.big, button.btn.big {
-          padding: 8px 8px;
+        .MOD_Seiga .im_head_bar .inner {
+          background-color: #FFFFFF;
+          border-color: #E8E8E8;
+          border-radius: 5px;
+          border-style: solid;
+          border-width: 0 0 1px;
+          box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+          display: block;
+          margin-top: 20px;
+          margin-bottom: 20px;
+          margin-left: auto;
+          margin-right: auto;
+          padding: 15px;
+          position: relative;
+          width: 974px;
         }
 
+        .MOD_Seiga .im_head_bar .inner .user {
+          right: 15px;
+        }
+
+        .illust_main .mod_tag-top.illust_sub_info {
+          padding-bottom: 25px;
+          padding-top: 0;
+        }
 
 
 
@@ -197,7 +176,8 @@
         var prefix = 'MOD_Seiga_';
         var conf = {
           applyCss: true,
-          topUserInfo: true
+          topUserInfo: true,
+          tagPosition: 'top'
         };
 
         this.config = {
@@ -217,16 +197,30 @@
         };
       },
       initializeBaseLayout: function() {
-        var $illust_main = $('.illust_main:first').detach();
-        $('#detail .illust_info:first').after($illust_main);
+//        var $illust_main = $('.illust_main:first').detach();
+//        $('#detail .illust_info:first').after($illust_main);
+
+        var tagPos = this.config.get('tagPosition');
+        console.log('tagPos', tagPos);
+        if (tagPos !== 'default') {
+          var $subInfo = $('#detail .illust_sub_info').detach();
+          if (tagPos === 'top') {
+            $subInfo.addClass('mod_tag-top');
+            $('#detail .detail_inner .illust_wrapper .inner').before($subInfo);
+          } else
+          if (tagPos === 'top-right') {
+            $subInfo.addClass('mod_top-right');
+            $('#ko_watchlist_header').after($subInfo);
+          }
+        }
 
         if (this.config.get('topUserInfo')) {
-          var $watchlist_info = $('#ko_watchlist_info').detach();
-          $('#detail .discription, #detail .discription').addClass('topUserInfo').before($watchlist_info);
+//          var $watchlist_info = $('#ko_watchlist_info').detach();
+//          $('#detail .discription, #detail .discription').addClass('topUserInfo').before($watchlist_info);
         }
       },
       initializeDescription: function() {
-        var $description = $('#detail .description, #detail .discription');
+        var $description = $('#content .description, #content .discription');
         var html = $description.html();
 
         // 説明文中のURLの自動リンク
@@ -243,8 +237,8 @@
         html = html.split(' <br /> ').join('<br />');
 
         var $desc = $('<div>' +  html + '</div>');
-        $('#detail .description').empty().append($desc);
-        $('#detail .discription').empty().append($desc.clone()); // TODO
+        $('#content .description').empty().append($desc);
+        $('#content .discription').empty().append($desc.clone()); // もしかして:
 
       },
       initializeKnockout: function() {
@@ -273,11 +267,19 @@
           <button class="close" title="閉じる">×</button>
           </div>
           <div class="panelInner">
-            <div class="item" data-setting-name="topUserInfo" data-menu-type="radio">
+            <!--<div class="item" data-setting-name="topUserInfo" data-menu-type="radio">
               <h3 class="itemTitle">投稿者情報を右上に移動 </h3>
               <label><input type="radio" value="true" > する</label>
               <label><input type="radio" value="false"> しない</label>
+            </div>-->
+
+            <div class="item" data-setting-name="tagPosition" data-menu-type="radio">
+              <h3 class="itemTitle">タグの位置 </h3>
+              <label><input type="radio" value="&quot;top&quot;">画像の上</label>
+              <label style="display: none;"><input type="radio" value="&quot;top-right&quot;">右上</label>
+              <label><input type="radio" value="&quot;default&quot;">下(標準)</label>
             </div>
+
             <div class="expert">
               <h2>上級者向け設定</h2>
             </div>
