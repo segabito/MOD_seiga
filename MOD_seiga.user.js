@@ -3,9 +3,12 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.2.3
+// @version     0.2.4
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.3
+// - 右カラム広告のせいで無駄に横スクロールが発生しているのを修正
 
 // ver 0.2.3
 // - 市場を近づけた
@@ -239,6 +242,11 @@
         #content.illust { padding: 0; }
 
         #related_info .ad_tag { display: none;}
+
+        {* 右カラム広告のせいで無駄に横スクロールが発生しているのを修正 *}
+        .related_info .sub_info_side {
+          overflow-x: hidden;
+        }
 
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
