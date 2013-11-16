@@ -3,9 +3,12 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.2.2
+// @version     0.2.3
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.3
+// - 市場を近づけた
 
 // ver 0.2.2
 // - ホバーしなくてもタイトルと説明文が出るように
@@ -122,6 +125,16 @@
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
         var __css__ = (function() {/*
+
+
+        {* マイページや投稿へのリンクがあっても、すぐ上にniconico共通のヘッダーがあるのでいらないと思う。ということで省スペース優先で消す。*}
+        #header { background: #fff; }
+        #header .sg_global_bar {
+          display: none;
+        }
+        #header_cnt { width: 1004px; }
+
+        {* サムネのホバー調整 *}
         .list_item_cutout.middle {
           height: 154px;
         }
@@ -216,7 +229,16 @@
           bottom: auto; right: auto;
         }
 
+        #ichiba_box {
+          width: 1004px;
+          margin: 0 auto 20px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+        }
 
+        #content.illust { padding: 0; }
+
+        #related_info .ad_tag { display: none;}
 
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
@@ -270,6 +292,8 @@
             $description.after($subInfo);
           }
         }
+
+        $('#related_info').after($('#ichiba_box'));
 
         if (this.config.get('topUserInfo')) {
 //          var $watchlist_info = $('#ko_watchlist_info').detach();
