@@ -3,9 +3,12 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.2.1
+// @version     0.2.2
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.2
+// - ホバーしなくてもタイトルと説明文が出るように
 
 // ver 0.2.1
 // - タグを説明文の下・説明文の右に置けるように
@@ -119,22 +122,15 @@
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
         var __css__ = (function() {/*
-        .list_item_cutout.large {
-          height: 194px;
+        .list_item_cutout.middle {
+          height: 154px;
         }
-        .list_item_cutout.large a {
-          height: 194px;
+        .list_item_cutout.middle a {
+          height: 154px;
           overflow: visible;
         }
-        .list_item_cutout.large a .illust_info, .list_item_cutout.large a .illust_info:hover {
-          bottom: 0px;
-        }
-
-        .detail .illust_info .discription.topUserInfo, .detail .illust_info .description.topUserInfo {
-          {*margin-right: 390px;*}
-          min-height: 65px;
-
-          {*background: #ccc;{* debug *}
+        .list_item_cutout.middle a .illust_info, .list_item_cutout.middle a .illust_info:hover {
+          bottom: 0;
         }
 
         .MOD_Seiga .im_head_bar .inner {
