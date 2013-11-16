@@ -3,10 +3,12 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.2.0
+// @version     0.2.1
 // @grant       none
 // ==/UserScript==
 
+// ver 0.2.1
+// - タグを説明文の下・説明文の右に置けるように
 
 // ver 0.2.0
 // - 動かなくなっていたのでとりあえずまた動くようにした
@@ -67,6 +69,7 @@
             background: #f0f0f0; border: 1px solid black;
             padding: 8px;
             transition: bottom 0.4s ease-out;
+            text-align: left;
           }
           #MOD_SeigaSettingPanel.open {
             display: block;
@@ -101,7 +104,7 @@
           #MOD_SeigaSettingPanel .itemTitle {
           }
           #MOD_SeigaSettingPanel label {
-
+            margin-right: 12px;
           }
           #MOD_SeigaSettingPanel small {
             color: #666;
@@ -155,11 +158,67 @@
           right: 15px;
         }
 
+
+        {* タグの位置調整 *}
         .illust_main .mod_tag-top.illust_sub_info {
           padding-bottom: 25px;
           padding-top: 0;
         }
 
+
+        .illust_sub_info.mod_tag-description-bottom {
+          margin-top: 15px;
+        }
+        .im_head_bar .illust_tag h2 {
+          float: left;
+          font-size: 116.7%;
+          line-height: 120%;
+          margin: 4px 10px 0 -2px;
+          overflow: hidden;
+        }
+        .im_head_bar .illust_sub_info  input#tags {
+          margin-bottom: 15px;
+          margin-top: 5px;
+          padding: 4px 10px;
+          width: 280px;
+        }
+        .im_head_bar .illust_sub_info ul li.btn {
+          bottom: 15px;
+          position: absolute;
+          right: 15px;
+        }
+
+        {* タグ右上 *}
+        .description.mod_tag-description-right {
+          float: left;
+        }
+        .illust_sub_info.mod_tag-description-right {
+          width: 300px;
+          float: right;
+          margin: 0;
+        }
+        .mod_tag-description-right .tag {
+          background: none repeat scroll 0 0 rgba(0, 0, 0, 0);
+          border: medium none;
+          margin: 0;
+        }
+        .mod_tag-description-right .tag a {
+          padding: 0 5px;
+        }
+        .mod_tag-description-right .tag li {
+        }
+        .mod_tag-description-right .tag li a {
+          padding: 0 5px 0 0;
+          border: 0;
+        }
+        .im_head_bar .illust_sub_info.mod_tag-description-right ul li.btn.active {
+        }
+        {* 右下だと被ることがあるので仕方なく *}
+        .im_head_bar .illust_sub_info.mod_tag-description-right ul li.btn {
+          display: inline-block;
+          position: relative;
+          bottom: auto; right: auto;
+        }
 
 
 
@@ -177,7 +236,7 @@
         var conf = {
           applyCss: true,
           topUserInfo: true,
-          tagPosition: 'top'
+          tagPosition: 'description-bottom'
         };
 
         this.config = {
@@ -197,6 +256,7 @@
         };
       },
       initializeBaseLayout: function() {
+        var $description = $('#content .description, #content .discription').addClass('description');
 //        var $illust_main = $('.illust_main:first').detach();
 //        $('#detail .illust_info:first').after($illust_main);
 
@@ -208,9 +268,10 @@
             $subInfo.addClass('mod_tag-top');
             $('#detail .detail_inner .illust_wrapper .inner').before($subInfo);
           } else
-          if (tagPos === 'top-right') {
-            $subInfo.addClass('mod_top-right');
-            $('#ko_watchlist_header').after($subInfo);
+          if (tagPos === 'description-bottom' || tagPos === 'description-right') {
+            $subInfo.addClass('mod_tag-' + tagPos);
+            $('.description').addClass('mod_tag-' + tagPos);
+            $description.after($subInfo);
           }
         }
 
@@ -238,7 +299,6 @@
 
         var $desc = $('<div>' +  html + '</div>');
         $('#content .description').empty().append($desc);
-        $('#content .discription').empty().append($desc.clone()); // もしかして:
 
       },
       initializeKnockout: function() {
@@ -275,9 +335,10 @@
 
             <div class="item" data-setting-name="tagPosition" data-menu-type="radio">
               <h3 class="itemTitle">タグの位置 </h3>
+              <label><input type="radio" value="&quot;description-bottom&quot;">説明文の下</label>
+              <label><input type="radio" value="&quot;description-right&quot;">説明文の右</label>
               <label><input type="radio" value="&quot;top&quot;">画像の上</label>
-              <label style="display: none;"><input type="radio" value="&quot;top-right&quot;">右上</label>
-              <label><input type="radio" value="&quot;default&quot;">下(標準)</label>
+              <label><input type="radio" value="&quot;default&quot;">画像の下(標準)</label>
             </div>
 
             <div class="expert">
