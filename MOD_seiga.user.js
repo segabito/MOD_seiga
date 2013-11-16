@@ -3,11 +3,14 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.2.4
+// @version     0.2.5
 // @grant       none
 // ==/UserScript==
 
-// ver 0.2.3
+// ver 0.2.5
+// - サムネイルがカットされなくする対応。 設定で無効にも出来ます
+
+// ver 0.2.4
 // - 右カラム広告のせいで無駄に横スクロールが発生しているのを修正
 
 // ver 0.2.3
@@ -45,6 +48,7 @@
 
         this.initializeBaseLayout();
         this.initializeDescription();
+        this.initializeThumbnail();
         this.initializeKnockout();
         this.initializeOther();
 
@@ -140,15 +144,35 @@
         {* サムネのホバー調整 *}
         .list_item_cutout.middle {
           height: 154px;
+          text-align: center;
         }
         .list_item_cutout.middle a {
-          height: 154px;
+          height: 100%;
           overflow: visible;
         }
         .list_item_cutout.middle a .illust_info, .list_item_cutout.middle a .illust_info:hover {
           bottom: 0;
         }
 
+        .list_item_cutout.mod_no_trim  .thum img {
+          display: none;
+        }
+        .list_item_cutout.mod_no_trim  .thum {
+          display: block;
+          width: 100%;
+          height: calc(100% - 40px);
+          background-repeat: no-repeat;
+          background-position: center center;
+          background-color: black;
+          background-size: contain;
+          -moz-background-size: contain;
+          -webkit-background-size: contain;
+          -o-background-size: contain;
+          -ms-background-size: contain;
+         }
+
+
+        {* タイトルと説明文・投稿者アイコンだけコンクリートの地面に置いてあるように感じたので絨毯を敷いた *}
         .MOD_Seiga .im_head_bar .inner {
           background-color: #FFFFFF;
           border-color: #E8E8E8;
@@ -262,7 +286,8 @@
         var conf = {
           applyCss: true,
           topUserInfo: true,
-          tagPosition: 'description-bottom'
+          tagPosition: 'description-bottom',
+          noTrim: true
         };
 
         this.config = {
@@ -287,7 +312,6 @@
 //        $('#detail .illust_info:first').after($illust_main);
 
         var tagPos = this.config.get('tagPosition');
-        console.log('tagPos', tagPos);
         if (tagPos !== 'default') {
           var $subInfo = $('#detail .illust_sub_info').detach();
           if (tagPos === 'top') {
@@ -310,6 +334,7 @@
       },
       initializeDescription: function() {
         var $description = $('#content .description, #content .discription');
+        if ($description.length < 1) { return; } // 春画で死なないようにするため
         var html = $description.html();
 
         // 説明文中のURLの自動リンク
@@ -328,6 +353,21 @@
         var $desc = $('<div>' +  html + '</div>');
         $('#content .description').empty().append($desc);
 
+      },
+      initializeThumbnail: function() {
+        if (this.config.get('noTrim') !== true) { return; }
+
+        var treg = /^(http:\/\/lohas.nicoseiga.jp\/+thumb\/+.\d+)[a-z\?]*/;
+        $('.list_item_cutout').each(function() {
+          var $this = $(this);
+          var $thum = $this.find('.thum');
+          var $img  = $thum.find('img');
+          var src   = $img.attr('src') || '';
+          if ($thum.length * $img.length < 1 || !treg.test(src)) return;
+          var url = RegExp.$1 + 'q?';
+          $thum.css({'background-image': 'url("' + url + '")'});
+          $this.addClass('mod_no_trim');
+        });
       },
       initializeKnockout: function() {
 
@@ -360,6 +400,13 @@
               <label><input type="radio" value="true" > する</label>
               <label><input type="radio" value="false"> しない</label>
             </div>-->
+
+            <div class="item" data-setting-name="noTrim" data-menu-type="radio">
+              <h3 class="itemTitle">サムネイルの左右カットをやめる </h3>
+              <label><input type="radio" value="true" >やめる</label>
+              <label><input type="radio" value="false">やめない</label>
+            </div>
+
 
             <div class="item" data-setting-name="tagPosition" data-menu-type="radio">
               <h3 class="itemTitle">タグの位置 </h3>
