@@ -3,9 +3,14 @@
 // @namespace   https://github.com/segabito/
 // @description MOD_Seiga
 // @include     http://seiga.nicovideo.jp/seiga/*
-// @version     0.2.5
+// @include     http://seiga.nicovideo.jp/tag/*
+// @include     http://seiga.nicovideo.jp/illust/*
+// @version     0.2.6
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.6
+// - サムネイルがカットされなくする対応をタグ検索とイラストトップにも適用
 
 // ver 0.2.5
 // - サムネイルがカットされなくする対応。 設定で無効にも出来ます
@@ -43,9 +48,21 @@
 
     window.MOD_Seiga = {
       initialize: function() {
-
         this.initializeUserConfig();
+        var path = location.pathname;
 
+        if (path.indexOf('/seiga/') === 0) {
+          this.initializeSeigaView();
+        } else
+        if (path.indexOf('/illust/') === 0) {
+          this.initializeIllustTop();
+        } else
+        if (path.indexOf('/tag/') === 0) {
+          this.initializeTagSearch();
+        }
+
+      },
+      initializeSeigaView: function() {
         this.initializeBaseLayout();
         this.initializeDescription();
         this.initializeThumbnail();
@@ -54,6 +71,21 @@
 
         this.initializeSettingPanel();
 
+        $('body').addClass('MOD_Seiga_View');
+        this.initializeCss();
+      },
+      initializeIllustTop: function() {
+        this.initializeThumbnail();
+        this.initializeSettingPanel();
+
+        $('body').addClass('MOD_Seiga_Top');
+        this.initializeCss();
+      },
+       initializeTagSearch: function() {
+        this.initializeThumbnail();
+        this.initializeSettingPanel();
+
+        $('body').addClass('MOD_Seiga_TagSearch');
         this.initializeCss();
       },
       addStyle: function(styles, id) {
@@ -154,16 +186,18 @@
           bottom: 0;
         }
 
+        {* サムネのカットなくすやつ。 *}
         .list_item_cutout.mod_no_trim  .thum img {
           display: none;
         }
+
+
         .list_item_cutout.mod_no_trim  .thum {
           display: block;
           width: 100%;
           height: calc(100% - 40px);
           background-repeat: no-repeat;
           background-position: center center;
-          background-color: black;
           background-size: contain;
           -moz-background-size: contain;
           -webkit-background-size: contain;
@@ -171,6 +205,47 @@
           -ms-background-size: contain;
          }
 
+        .list_item.mod_no_trim  .thum img {
+          display: none;
+        }
+
+        .list_item.mod_no_trim  .thum {
+          display: block;
+          width: 100%;
+          height: 0;
+          background-repeat: no-repeat;
+          background-position: center center;
+          background-size: contain;
+          -moz-background-size: contain;
+          -webkit-background-size: contain;
+          -o-background-size: contain;
+          -ms-background-size: contain;
+        }
+        .MOD_Seiga_View .list_item.mod_no_trim  .thum {
+        }
+        .list_item.mod_no_trim .thum:hover, .list_item_cutout.mod_no_trim .thum:hover {
+          background-size: cover;
+        }
+
+        .MOD_Seiga_Top .list_item_cutout.mod_no_trim  .thum {
+          height: calc(100% - 50px);
+        }
+        .MOD_Seiga_Top .list_item_cutout.mod_no_trim a {
+          height: 100%;
+          width: 100%;
+        }
+        .MOD_Seiga_Top .list_item_cutout.mod_no_trim.large a .illust_info {
+          bottom: 0px !important;
+          background-color: rgba(60, 60, 60, 1);
+          padding: 10px 40px;
+        }
+        .MOD_Seiga_Top .list_item_cutout.mod_no_trim.large {
+          width: 190px;
+          height: 190px;
+        }
+        .MOD_Seiga_Top .rank_box .item_list.mod_no_trim .more_link a {
+          width: 190px;
+        }
 
         {* タイトルと説明文・投稿者アイコンだけコンクリートの地面に置いてあるように感じたので絨毯を敷いた *}
         .MOD_Seiga .im_head_bar .inner {
@@ -357,14 +432,16 @@
       initializeThumbnail: function() {
         if (this.config.get('noTrim') !== true) { return; }
 
-        var treg = /^(http:\/\/lohas.nicoseiga.jp\/+thumb\/+.\d+)[a-z\?]*/;
-        $('.list_item_cutout').each(function() {
+        var treg = /^(http:\/\/lohas.nicoseiga.jp\/+thumb\/+.\d+)([a-z\?]*)/;
+        $('.list_item_cutout, #main .list_item').each(function() {
           var $this = $(this);
           var $thum = $this.find('.thum');
           var $img  = $thum.find('img');
           var src   = $img.attr('src') || '';
           if ($thum.length * $img.length < 1 || !treg.test(src)) return;
-          var url = RegExp.$1 + 'q?';
+          // TODO: 静画のサムネの種類を調べる
+          var url = RegExp.$1 + 'q?';//RegExp.$2 === 't' ? src : RegExp.$1 + 'q?';
+          //console.log('url', url);
           $thum.css({'background-image': 'url("' + url + '")'});
           $this.addClass('mod_no_trim');
         });
