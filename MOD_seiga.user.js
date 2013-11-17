@@ -5,9 +5,13 @@
 // @include     http://seiga.nicovideo.jp/seiga/*
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
-// @version     0.2.6
+// @include     http://lohas.nicoseiga.jp/o/*
+// @version     0.2.7
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.7
+// - 全画面表示時に画像クリックでズームが切り替わる対応
 
 // ver 0.2.6
 // - サムネイルがカットされなくする対応をタグ検索とイラストトップにも適用
@@ -59,6 +63,9 @@
         } else
         if (path.indexOf('/tag/') === 0) {
           this.initializeTagSearch();
+        } else
+        if (path.indexOf('/o/') === 0) {
+          this.initializeFullView();
         }
 
       },
@@ -86,6 +93,11 @@
         this.initializeSettingPanel();
 
         $('body').addClass('MOD_Seiga_TagSearch');
+        this.initializeCss();
+      },
+       initializeFullView: function() {
+        $('body').addClass('MOD_Seiga_FullView');
+        this.initializeFullscreenImage();
         this.initializeCss();
       },
       addStyle: function(styles, id) {
@@ -347,6 +359,59 @@
           overflow-x: hidden;
         }
 
+        .MOD_Seiga_FullView #content.illust_big .illust_view_big {
+          margin: 0 auto;
+        }
+
+        .MOD_Seiga_FullView .controll {
+          position: absolute;
+          right: 0;
+          top: 0;
+          z-index: 1000;
+          opacity: 0;
+          transition: opacity 0.5s ease;
+        }
+
+        .MOD_Seiga_FullView:hover .controll {
+          opacity: 1;
+        }
+
+        .MOD_Seiga_FullView .illust_view_big img {
+          {*transform: scale(1); -webkit-transform: scale(1);
+          transition: transform 0.3s ease, -webkit-transform 0.3s ease;*}
+        }
+
+        .MOD_Seiga_FullView:not(.mod_noScale) .illust_view_big img {
+          position: absolute;
+          top: 0;
+          left: 0;
+                  transform-origin: 0 0 0;
+          -webkit-transform-origin: 0 0 0;
+        }
+
+        .MOD_Seiga_FullView.mod_contain {
+          overflow: hidden;
+        }
+        .MOD_Seiga_FullView.mod_cover {
+        }
+        .MOD_Seiga_FullView.mod_contain .illust_view_big img,
+        .MOD_Seiga_FullView.mod_cover   .illust_view_big img {
+          {*display: none;*}
+        }
+
+        .MOD_Seiga_FullView             .illust_view_big {
+          background-repeat: no-repeat;
+          background-position: center center;
+        }
+        .MOD_Seiga_FullView.mod_contain .illust_view_big {
+          background-size: contain;
+        }
+        .MOD_Seiga_FullView.mod_cover   .illust_view_big {
+          background-size: cover;
+        }
+
+
+
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
 
@@ -525,8 +590,90 @@
 
         $('#siteHeaderRightMenuFix').after($menu);
         $('body').append($panel);
+      },
+      initializeFullscreenImage: function() {
+        var $body = $('body'), $container = $('.illust_view_big'), $img = $container.find('img'), scale = 1;
+        var width = $img.outerWidth, height = $img.outerHeight();
+        var $window = $(window);
 
+        var isLargerThanWindow = function() {
+          return width > $window.innerWidth() || height > $window.innerHeight();
+        };
+        var clearCss = function() {
+          $body.removeClass('mod_contain').removeClass('mod_cover').removeClass('mod_noScale');
+          $container.css({width: '', height: ''});
+          $img.css({'transform': '', '-webkit-transform': '', top: '', left: ''});
+        };
+        var contain = function() {
+          clearCss();
+          $body.addClass('mod_contain');
+          scale = Math.min(
+            $window.innerWidth() / $img.outerWidth(),
+            $window.innerHeight() / $img.outerHeight()
+          );
+          var css;
+          $img.css({
+            'transform':         'scale(' + scale + ')',
+            '-webkit-transform': 'scale(' + scale + ')',
+            'left':  ($window.innerWidth()  - $img.outerWidth()  * scale) / 2 + 'px',
+            'top':   ($window.innerHeight() - $img.outerHeight() * scale) / 2 + 'px'
+          });
+          $container.width($window.innerWidth());
+          $container.height($window.innerHeight());
+//          $container.css('background-image', 'url("' + $img.attr('src') + '")');
 
+        };
+        var cover = function() {
+          clearCss();
+          $body.addClass('mod_cover').css('overflow', 'scroll');
+          scale = Math.max(
+            $window.innerWidth() / $img.outerWidth(),
+            $window.innerHeight() / $img.outerHeight()
+          );
+          $img.css({
+            'transform':         'scale(' + scale + ')',
+            '-webkit-transform': 'scale(' + scale + ')',
+          });
+          // ウィンドウサイズの計算にスクロールバーの幅を含めるための措置 おもにwindows用
+          $body.css('overflow', '');
+        };
+        var noScale = function() {
+          clearCss();
+          $body.addClass('mod_noScale');
+          scale = 1;
+          $container.css('background-image', '');
+        };
+
+        var onclick = function(e) {
+          if (e.button > 0) { return; }
+          // TODO: クリックした位置が中心になるようにスクロール
+          if ($body.hasClass('mod_noScale')) {
+            contain();
+          } else
+          if ($body.hasClass('mod_contain')) {
+            cover();
+          } else {
+            //var x = scale * e.clientX, y = scale * e.clientY;
+            noScale();
+          }
+        };
+        var update = function() {
+          if ($body.hasClass('mod_contain')) {
+            contain();
+          } else
+          if ($body.hasClass('mod_cover')) {
+            cover();
+          }
+        };
+
+//        $body.addClass('mod_noScale');
+        contain();
+        $img.on('click', onclick);
+        $window.on('resize', update);
+        $img.on('load.MOD_Seiga', function() {
+          update();
+          $img.off('load.MOD_Seiga');
+        });
       }
     };
 
