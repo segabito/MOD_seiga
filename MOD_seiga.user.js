@@ -6,9 +6,13 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.7
+// @version     0.2.8
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.8
+// - クリップボタンの位置を上にしてみる
+// - 右上の投稿者アイコンを大きくしてみる
 
 // ver 0.2.7
 // - 全画面表示時に画像クリックでズームが切り替わる対応
@@ -279,6 +283,8 @@
 
         .MOD_Seiga .im_head_bar .inner .user {
           right: 15px;
+          transform:         scale(1.5); transform-origin:         100% 0 0;
+          -webkit-transform: scale(1.5); -webkit-transform-origin: 100% 0 0;
         }
 
 
@@ -358,6 +364,17 @@
         .related_info .sub_info_side {
           overflow-x: hidden;
         }
+
+
+        .illust_main .illust_side .clip {
+          padding: 10px 10px 0;
+        }
+        #clip_group_list {
+          max-height: 300px;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
 
         .MOD_Seiga_FullView #content.illust_big .illust_view_big {
           margin: 0 auto;
@@ -466,6 +483,8 @@
         }
 
         $('#related_info').after($('#ichiba_box'));
+
+        $('#ko_comment').before($('#ko_clip'));
 
         if (this.config.get('topUserInfo')) {
 //          var $watchlist_info = $('#ko_watchlist_info').detach();
@@ -611,6 +630,7 @@
             $window.innerWidth() / $img.outerWidth(),
             $window.innerHeight() / $img.outerHeight()
           );
+          scale = Math.min(scale, 10);
           var css;
           $img.css({
             'transform':         'scale(' + scale + ')',
@@ -624,12 +644,14 @@
 
         };
         var cover = function() {
+          // TODO: 横長の時は縦ホイールでも横スクロールできるようにする (windowsむけ)
           clearCss();
           $body.addClass('mod_cover').css('overflow', 'scroll');
           scale = Math.max(
             $window.innerWidth() / $img.outerWidth(),
             $window.innerHeight() / $img.outerHeight()
           );
+          scale = Math.min(scale, 10);
           $img.css({
             'transform':         'scale(' + scale + ')',
             '-webkit-transform': 'scale(' + scale + ')',
@@ -674,6 +696,7 @@
           update();
           $img.off('load.MOD_Seiga');
         });
+
       }
     };
 
