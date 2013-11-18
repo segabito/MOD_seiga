@@ -6,9 +6,14 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.8
+// @version     0.2.9
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.9
+// - 動画タイトルの位置に自動スクロールする対応
+// - おもにwindows等、縦ホイールしかない環境で横スクロールしやすくする。Firefoxでうまくいかない
+// - ウィンドウ幅が狭いときはページ一番上に戻るボタンを出さなくする設定
 
 // ver 0.2.8
 // - クリップボタンの位置を上にしてみる
@@ -75,11 +80,13 @@
       },
       initializeSeigaView: function() {
         this.initializeBaseLayout();
+        this.initializeScrollTop();
         this.initializeDescription();
         this.initializeThumbnail();
+        this.initializePageTopButton();
         this.initializeKnockout();
-        this.initializeOther();
 
+        this.initializeOther();
         this.initializeSettingPanel();
 
         $('body').addClass('MOD_Seiga_View');
@@ -89,6 +96,7 @@
         this.initializeThumbnail();
         this.initializeSettingPanel();
 
+        this.initializePageTopButton();
         $('body').addClass('MOD_Seiga_Top');
         this.initializeCss();
       },
@@ -96,6 +104,7 @@
         this.initializeThumbnail();
         this.initializeSettingPanel();
 
+        this.initializePageTopButton();
         $('body').addClass('MOD_Seiga_TagSearch');
         this.initializeCss();
       },
@@ -427,6 +436,7 @@
           background-size: cover;
         }
 
+        #pagetop.mod_hide { display: none !important; }
 
 
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
@@ -444,7 +454,8 @@
           applyCss: true,
           topUserInfo: true,
           tagPosition: 'description-bottom',
-          noTrim: true
+          noTrim: true,
+          hidePageTopButton: true
         };
 
         this.config = {
@@ -486,10 +497,24 @@
 
         $('#ko_comment').before($('#ko_clip'));
 
-        if (this.config.get('topUserInfo')) {
+
+//        if (this.config.get('topUserInfo')) {
 //          var $watchlist_info = $('#ko_watchlist_info').detach();
 //          $('#detail .discription, #detail .discription').addClass('topUserInfo').before($watchlist_info);
-        }
+//        }
+      },
+      initializeScrollTop: function() {
+        var $document = $(document), $body = $('body'); //, $bar = $('#bar');
+
+        var reset = this.resetScrollTop = function() {
+          var nofix = $body.hasClass('nofix');
+          var commonHeaderHeight = nofix ? 0 : 36; //$bar.outerHeight();
+          $document.scrollTop(Math.max(
+            $document.scrollTop(),
+            $('#content .im_head_bar').offset().top -commonHeaderHeight
+          ));
+        };
+        reset();
       },
       initializeDescription: function() {
         var $description = $('#content .description, #content .discription');
@@ -530,8 +555,19 @@
           $this.addClass('mod_no_trim');
         });
       },
+      initializePageTopButton: function() {
+        var config = this.config;
+        var updatePageTopButtonVisibility = function() {
+          console.log(111);
+          if (config.get('hidePageTopButton') !== true) { return; }
+          var threshold = 1004 + 180; // ボディ幅 + おおまかなボタン幅
+          console.log(111, $(window).innerWidth());
+          $('#pagetop').toggleClass('mod_hide', $(window).innerWidth() < threshold);
+        };
+        updatePageTopButtonVisibility();
+        $(window).on('resize', updatePageTopButtonVisibility);
+       },
       initializeKnockout: function() {
-
       },
       initializeOther: function() {
         $('body').addClass('MOD_Seiga');
@@ -568,6 +604,11 @@
               <label><input type="radio" value="false">やめない</label>
             </div>
 
+            <div class="item" data-setting-name="hidePageTopButton" data-menu-type="radio">
+              <h3 class="itemTitle">ウィンドウ幅が狭いときはページトップに戻るボタンを隠す</h3>
+              <label><input type="radio" value="true" >隠す</label>
+              <label><input type="radio" value="false">隠さない</label>
+            </div>
 
             <div class="item" data-setting-name="tagPosition" data-menu-type="radio">
               <h3 class="itemTitle">タグの位置 </h3>
@@ -615,9 +656,6 @@
         var width = $img.outerWidth, height = $img.outerHeight();
         var $window = $(window);
 
-        var isLargerThanWindow = function() {
-          return width > $window.innerWidth() || height > $window.innerHeight();
-        };
         var clearCss = function() {
           $body.removeClass('mod_contain').removeClass('mod_cover').removeClass('mod_noScale');
           $container.css({width: '', height: ''});
@@ -631,7 +669,6 @@
             $window.innerHeight() / $img.outerHeight()
           );
           scale = Math.min(scale, 10);
-          var css;
           $img.css({
             'transform':         'scale(' + scale + ')',
             '-webkit-transform': 'scale(' + scale + ')',
@@ -675,7 +712,6 @@
           if ($body.hasClass('mod_contain')) {
             cover();
           } else {
-            //var x = scale * e.clientX, y = scale * e.clientY;
             noScale();
           }
         };
@@ -688,7 +724,6 @@
           }
         };
 
-//        $body.addClass('mod_noScale');
         contain();
         $img.on('click', onclick);
         $window.on('resize', update);
@@ -697,6 +732,36 @@
           $img.off('load.MOD_Seiga');
         });
 
+        var hasWheelDeltaX = false;
+
+        // おもにwindows等、縦ホイールしかない環境で横スクロールしやすくする
+        // Firefoxでうまくいかない
+        $(document).on('mousewheel', function(e) {
+          var delta = 0;
+
+          if (!$body.hasClass('mod_cover')) { return; }
+
+          if (hasWheelDeltaX) { return; }
+
+          if (!e.originalEvent) { return; }
+          var oe = e.originalEvent;
+
+          if (typeof oe.wheelDelta === 'number') {
+            if (typeof oe.wheelDeltaX === 'number' && oe.wheelDeltaX !== 0) {
+              hasWheelDeltaX = true;
+              return; // ホイールで横スクロールできる環境だとかえって邪魔なのでなにもしない
+            }
+
+            delta = e.originalEvent.wheelDelta / Math.abs(e.originalEvent.wheelDelta);
+          }
+          if (delta === 0) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          var scrollLeft = $body.scrollLeft() - (delta * $window.innerWidth() / 10);
+          $body.scrollLeft(Math.max(scrollLeft, 0));
+        });
       }
     };
 
