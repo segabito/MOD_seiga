@@ -6,9 +6,14 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.9
+// @version     0.2.10
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.10
+// - ヘッダ固定の時の自動スクロール修正
+// - タグ検索時にカウンターが常時表示されるように変更
+// - ページ下側の投稿者アイコンを隠す設定 (右上だけあればいい人用)
 
 // ver 0.2.9
 // - 動画タイトルの位置に自動スクロールする対応
@@ -272,6 +277,17 @@
           width: 190px;
         }
 
+        {* タグ検索時、カウンタなどが常時見えるように修正 *}
+        .MOD_Seiga_TagSearch .list_item.large a .illust_count {
+          opacity: 1;
+        }
+        .MOD_Seiga_TagSearch .list_item.large a {
+          height: 321px;
+        }
+        .MOD_Seiga_TagSearch .list_item.large {
+          height: 351px;
+        }
+
         {* タイトルと説明文・投稿者アイコンだけコンクリートの地面に置いてあるように感じたので絨毯を敷いた *}
         .MOD_Seiga .im_head_bar .inner {
           background-color: #FFFFFF;
@@ -438,6 +454,8 @@
 
         #pagetop.mod_hide { display: none !important; }
 
+        #ko_watchlist_info.mod_hide { display: none !important; }
+
 
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
@@ -455,7 +473,8 @@
           topUserInfo: true,
           tagPosition: 'description-bottom',
           noTrim: true,
-          hidePageTopButton: true
+          hidePageTopButton: true,
+          hideBottomUserInfo: false
         };
 
         this.config = {
@@ -497,6 +516,10 @@
 
         $('#ko_comment').before($('#ko_clip'));
 
+        if (this.config.get('hideBottomUserInfo') === true) {
+          $('#ko_watchlist_info').addClass('mod_hide');
+        }
+
 
 //        if (this.config.get('topUserInfo')) {
 //          var $watchlist_info = $('#ko_watchlist_info').detach();
@@ -514,6 +537,7 @@
             $('#content .im_head_bar').offset().top -commonHeaderHeight
           ));
         };
+        setTimeout(reset, 100);
         reset();
       },
       initializeDescription: function() {
@@ -606,6 +630,13 @@
 
             <div class="item" data-setting-name="hidePageTopButton" data-menu-type="radio">
               <h3 class="itemTitle">ウィンドウ幅が狭いときはページトップに戻るボタンを隠す</h3>
+              <label><input type="radio" value="true" >隠す</label>
+              <label><input type="radio" value="false">隠さない</label>
+            </div>
+
+            <div class="item" data-setting-name="hideBottomUserInfo" data-menu-type="radio">
+              <h3 class="itemTitle">ページ下側の投稿者情報を隠す</h3>
+              <small>右上だけでいい場合など</small><br>
               <label><input type="radio" value="true" >隠す</label>
               <label><input type="radio" value="false">隠さない</label>
             </div>
