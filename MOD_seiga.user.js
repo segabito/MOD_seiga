@@ -12,6 +12,7 @@
 
 // ver 0.2.12
 // - コメント一覧で一番下のコメントが見きれる問題二を勝手に直す
+// - タグ検索時にキーワード検索フォームに自動でタグのテキストを入れる
 
 // ver 0.2.11
 // - コメント中の動画・静画IDやURLへのリンクに対応
@@ -125,6 +126,14 @@
         this.initializeSettingPanel();
 
         this.initializePageTopButton();
+        setTimeout(function() {
+          var $search = $('#bar_search');
+          if (
+            $search.val() === 'イラストを検索' ||
+            $search.val() === '春画を検索') {
+            $search.val($('#ko_tagwatch_min').attr('data-query')).addClass('edited').css({color: '#000'});
+          }
+        }, 1000);
         $('body').addClass('MOD_Seiga_TagSearch');
         this.initializeCss();
       },
@@ -210,10 +219,22 @@
             font-weight: bolder;
           }
 
+          {* 画面が狭いときに操作不能になる部分などを直す *}
           .MOD_Seiga .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
             padding-bottom: 150px; {* 一番下のコメントが見切れるのを対策 *}
           }
-
+          .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
+            position: fixed;
+            right: 25px;
+            top: 105px; bottom: 105px; overflow-y: auto;
+          }
+          .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .res .inner {
+            position: fixed;
+            bottom: 0; right: 5px;
+          }
+          .MOD_Seiga.mod_underXGA .comment_all .comment_all_header .control{
+            position: fixed; top: 35px; right: 25px; {* 横幅が狭いと閉じるを押せない問題の対応 *}
+          }
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
         var __css__ = (function() {/*
@@ -646,7 +667,6 @@
         };
         noTrim();
         document.body.addEventListener('AutoPagerize_DOMNodeInserted', function() {
-          console.log('autopagerized!');
           setTimeout(function() {
             noTrim();
           }, 500);
@@ -657,7 +677,9 @@
         var updatePageTopButtonVisibility = function() {
           if (config.get('hidePageTopButton') !== true) { return; }
           var threshold = 1004 + 180; // ボディ幅 + おおまかなボタン幅
+          var innerWidth = $(window).innerWidth();
           $('#pagetop').toggleClass('mod_hide', $(window).innerWidth() < threshold);
+          $('body').toggleClass('mod_underXGA', innerWidth < 1024);
         };
         updatePageTopButtonVisibility();
         $(window).on('resize', updatePageTopButtonVisibility);
