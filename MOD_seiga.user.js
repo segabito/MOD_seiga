@@ -6,9 +6,14 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.10
+// @version     0.2.11
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.11
+// - コメント中の動画・静画IDやURLへのリンクに対応
+// - 春画でも説明文のURL自動リンクに対応
+// - 切れないサムネをAutopagerizeに対応
 
 // ver 0.2.10
 // - ヘッダ固定の時の自動スクロール修正
@@ -68,7 +73,6 @@
       initialize: function() {
         this.initializeUserConfig();
         var path = location.pathname;
-
         if (path.indexOf('/seiga/') === 0) {
           this.initializeSeigaView();
         } else
@@ -84,18 +88,26 @@
 
       },
       initializeSeigaView: function() {
-        this.initializeBaseLayout();
-        this.initializeScrollTop();
-        this.initializeDescription();
-        this.initializeThumbnail();
-        this.initializePageTopButton();
-        this.initializeKnockout();
+        if ($('#content').length > 0) {
+          this.initializeBaseLayout();
 
-        this.initializeOther();
-        this.initializeSettingPanel();
+          this.initializeScrollTop();
+          this.initializeDescription();
+          this.initializeCommentLink();
+          this.initializeThumbnail();
+          this.initializePageTopButton();
+          this.initializeKnockout();
 
-        $('body').addClass('MOD_Seiga_View');
-        this.initializeCss();
+          this.initializeOther();
+          this.initializeSettingPanel();
+
+          $('body').addClass('MOD_Seiga_View');
+          this.initializeCss();
+        } else {
+          // 春画っぽい。説明文の自動リンクだけやる
+          this.initializeDescription();
+        }
+
       },
       initializeIllustTop: function() {
         this.initializeThumbnail();
@@ -105,7 +117,7 @@
         $('body').addClass('MOD_Seiga_Top');
         this.initializeCss();
       },
-       initializeTagSearch: function() {
+      initializeTagSearch: function() {
         this.initializeThumbnail();
         this.initializeSettingPanel();
 
@@ -113,7 +125,7 @@
         $('body').addClass('MOD_Seiga_TagSearch');
         this.initializeCss();
       },
-       initializeFullView: function() {
+      initializeFullView: function() {
         $('body').addClass('MOD_Seiga_FullView');
         this.initializeFullscreenImage();
         this.initializeCss();
@@ -190,6 +202,10 @@
             background: #ccc;
           }
 
+          .comment_info .mod_link, .description .otherSite {
+            text-decoration: underline;
+            font-weight: bolder;
+          }
 
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
@@ -495,6 +511,7 @@
       },
       initializeBaseLayout: function() {
         var $description = $('#content .description, #content .discription').addClass('description');
+        $('.controll').addClass('control');
 //        var $illust_main = $('.illust_main:first').detach();
 //        $('#detail .illust_info:first').after($illust_main);
 
@@ -541,8 +558,8 @@
         reset();
       },
       initializeDescription: function() {
-        var $description = $('#content .description, #content .discription');
-        if ($description.length < 1) { return; } // 春画で死なないようにするため
+        var $description = $('#content .description, #content .discription, .illust_user_exp');
+        if ($description.length < 1) { return; }
         var html = $description.html();
 
         // 説明文中のURLの自動リンク
@@ -559,33 +576,80 @@
         html = html.split(' <br /> ').join('<br />');
 
         var $desc = $('<div>' +  html + '</div>');
-        $('#content .description').empty().append($desc);
+        $description.empty().append($desc);
 
+      },
+      initializeCommentLink: function() {
+        var videoReg = /((sm|nm|so)\d+)/g;
+        var seigaReg = /(im\d+)/g;
+        var bookReg  = /((bk|mg)\d+)/g;
+        var urlReg   = /(https?:\/\/[\x21-\x3b\x3d-\x7e]+)/gi;
+
+        var autoLink = function(text) {
+          text = text
+            .replace(videoReg, '<a href="<HTTP>www.nicovideo.jp/watch/$1" class="video mod_link">$1</a>')
+            .replace(seigaReg, '<a href="<HTTP>seiga.nicovideo.jp/seiga/$1" class="illust mod_link">$1</a>')
+            .replace(bookReg,  '<a href="<HTTP>seiga.nicovideo.jp/watch/$1" class="book mod_link">$1</a>')
+            .replace(urlReg,   '<a href="$1" target="_blank" class="otherSite mod_link">$1</a>')
+            .split('<HTTP>').join('http://');
+          return text;
+        };
+        var commentLink = function(selector) {
+          $(selector).each(function() {
+            var $this = $(this);
+            $this.html(autoLink($this.html())).addClass('mod_linked');
+          });
+        };
+
+        setTimeout(function() {
+          commentLink('#comment_list .comment_info .text:not(.mod_linked)');
+          var updateTimer = null;
+          document.body.addEventListener('DOMNodeInserted', function(e) {
+            if (e.target.className && e.target.className.indexOf('comment_list_item') >= 0) {
+              if (updateTimer) {
+                updateTimer = clearTimeout(updateTimer);
+              }
+              updateTimer = setTimeout(function() {
+                updateTimer = clearTimeout(updateTimer);
+                commentLink('#comment_list .comment_info .text:not(.mod_linked)');
+                //var $text = $(e.target).find('.text');
+                //if (!$text.hasClass('mod_linked')) $text.html(autoLink($text.text())).addClass('mod_linked');
+              }, 100);
+            }
+          });
+
+        }, 100);
       },
       initializeThumbnail: function() {
         if (this.config.get('noTrim') !== true) { return; }
 
         var treg = /^(http:\/\/lohas.nicoseiga.jp\/+thumb\/+.\d+)([a-z\?]*)/;
-        $('.list_item_cutout, #main .list_item').each(function() {
-          var $this = $(this);
-          var $thum = $this.find('.thum');
-          var $img  = $thum.find('img');
-          var src   = $img.attr('src') || '';
-          if ($thum.length * $img.length < 1 || !treg.test(src)) return;
-          // TODO: 静画のサムネの種類を調べる
-          var url = RegExp.$1 + 'q?';//RegExp.$2 === 't' ? src : RegExp.$1 + 'q?';
-          //console.log('url', url);
-          $thum.css({'background-image': 'url("' + url + '")'});
-          $this.addClass('mod_no_trim');
+        var noTrim = function() {
+          $('.list_item_cutout, #main .list_item:not(.mod_no_trim)').each(function() {
+            var $this = $(this);
+            var $thum = $this.find('.thum');
+            var $img  = $thum.find('img');
+            var src   = $img.attr('src') || '';
+            if ($thum.length * $img.length < 1 || !treg.test(src)) return;
+            // TODO: 静画のサムネの種類を調べる
+            var url = RegExp.$1 + 'q?';//RegExp.$2 === 't' ? src : RegExp.$1 + 'q?';
+            $thum.css({'background-image': 'url("' + url + '")'});
+            $this.addClass('mod_no_trim');
+          });
+        };
+        noTrim();
+        document.body.addEventListener('AutoPagerize_DOMNodeInserted', function() {
+          console.log('autopagerized!');
+          setTimeout(function() {
+            noTrim();
+          }, 500);
         });
       },
       initializePageTopButton: function() {
         var config = this.config;
         var updatePageTopButtonVisibility = function() {
-          console.log(111);
           if (config.get('hidePageTopButton') !== true) { return; }
           var threshold = 1004 + 180; // ボディ幅 + おおまかなボタン幅
-          console.log(111, $(window).innerWidth());
           $('#pagetop').toggleClass('mod_hide', $(window).innerWidth() < threshold);
         };
         updatePageTopButtonVisibility();
@@ -712,7 +776,6 @@
 
         };
         var cover = function() {
-          // TODO: 横長の時は縦ホイールでも横スクロールできるようにする (windowsむけ)
           clearCss();
           $body.addClass('mod_cover').css('overflow', 'scroll');
           scale = Math.max(
@@ -770,7 +833,9 @@
         $(document).on('mousewheel', function(e) {
           var delta = 0;
 
-          if (!$body.hasClass('mod_cover')) { return; }
+          if ($body.hasClass('mod_contain')) { return; }
+
+          if (document.body.scrollHeight > window.innerHeight) { return; }
 
           if (hasWheelDeltaX) { return; }
 
