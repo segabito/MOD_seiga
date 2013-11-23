@@ -6,9 +6,12 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.11
+// @version     0.2.12
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.12
+// - コメント一覧で一番下のコメントが見きれる問題二を勝手に直す
 
 // ver 0.2.11
 // - コメント中の動画・静画IDやURLへのリンクに対応
@@ -39,7 +42,7 @@
 // - サムネイルがカットされなくする対応。 設定で無効にも出来ます
 
 // ver 0.2.4
-// - 右カラム広告のせいで無駄に横スクロールが発生しているのを修正
+// - 右カラム広告のせいで無駄に横スクロールが発生しているのを勝手に直す
 
 // ver 0.2.3
 // - 市場を近づけた
@@ -205,6 +208,10 @@
           .comment_info .mod_link, .description .otherSite {
             text-decoration: underline;
             font-weight: bolder;
+          }
+
+          .MOD_Seiga .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
+            padding-bottom: 150px; {* 一番下のコメントが見切れるのを対策 *}
           }
 
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
