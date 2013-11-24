@@ -625,7 +625,11 @@
         var commentLink = function(selector) {
           $(selector).each(function() {
             var $this = $(this);
-            $this.html(autoLink($this.html())).addClass('mod_linked');
+            var html = $this.html(), linked = autoLink(html);
+            if (html !== linked) {
+              $this.html(linked);
+            }
+            $this.addClass('mod_linked');
           });
         };
 
