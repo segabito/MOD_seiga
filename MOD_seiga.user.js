@@ -6,9 +6,12 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.12
+// @version     0.2.13
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.13
+// - クリップの向きが変わったので、クリップメニューの位置を設定できるようにした
 
 // ver 0.2.12
 // - コメント一覧で一番下のコメントが見きれる問題二を勝手に直す
@@ -435,13 +438,8 @@
         }
 
 
-        .illust_main .illust_side .clip {
+        .illust_main .illust_side .clip.mod_top {
           padding: 10px 10px 0;
-        }
-        #clip_group_list {
-          max-height: 300px;
-          overflow-y: auto;
-          overflow-x: hidden;
         }
 
 
@@ -449,7 +447,7 @@
           margin: 0 auto;
         }
 
-        .MOD_Seiga_FullView .controll {
+        .MOD_Seiga_FullView .control {
           position: absolute;
           right: 0;
           top: 0;
@@ -458,7 +456,7 @@
           transition: opacity 0.5s ease;
         }
 
-        .MOD_Seiga_FullView:hover .controll {
+        .MOD_Seiga_FullView:hover .control {
           opacity: 1;
         }
 
@@ -518,6 +516,7 @@
           tagPosition: 'description-bottom',
           noTrim: true,
           hidePageTopButton: true,
+          clipPosition: 'bottom',
           hideBottomUserInfo: false
         };
 
@@ -559,7 +558,9 @@
 
         $('#related_info').after($('#ichiba_box'));
 
-        $('#ko_comment').before($('#ko_clip'));
+        if (this.config.get('clipPosition') === 'top') {
+          $('#ko_comment').before($('#ko_clip').addClass('mod_top'));
+        }
 
         if (this.config.get('hideBottomUserInfo') === true) {
           $('#ko_watchlist_info').addClass('mod_hide');
@@ -738,6 +739,12 @@
               <label><input type="radio" value="false">隠さない</label>
             </div>
 
+            <div class="item" data-setting-name="clipPosition" data-menu-type="radio">
+              <h3 class="itemTitle">クリップ登録メニューの位置</h3>
+              <label><input type="radio" value="&quot;top&quot;" >上</label>
+              <label><input type="radio" value="&quot;bottom&quot;">下</label>
+            </div>
+
             <div class="item" data-setting-name="tagPosition" data-menu-type="radio">
               <h3 class="itemTitle">タグの位置 </h3>
               <label><input type="radio" value="&quot;description-bottom&quot;">説明文の下</label>
@@ -783,6 +790,7 @@
         var $body = $('body'), $container = $('.illust_view_big'), $img = $container.find('img'), scale = 1;
         var width = $img.outerWidth, height = $img.outerHeight();
         var $window = $(window);
+        $('.controll').addClass('control');
 
         var clearCss = function() {
           $body.removeClass('mod_contain').removeClass('mod_cover').removeClass('mod_noScale');
