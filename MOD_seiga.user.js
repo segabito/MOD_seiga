@@ -6,7 +6,7 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.13
+// @version     0.2.14
 // @grant       none
 // ==/UserScript==
 
@@ -230,6 +230,9 @@
             position: fixed;
             right: 25px;
             top: 105px; bottom: 105px; overflow-y: auto;
+          }
+          .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list .text {
+            margin: 0 16px 0 0;
           }
           .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .res .inner {
             position: fixed;
