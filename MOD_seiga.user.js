@@ -6,7 +6,7 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.14
+// @version     0.2.15
 // @grant       none
 // ==/UserScript==
 
@@ -619,11 +619,10 @@
 
         var autoLink = function(text) {
           text = text
-            .replace(videoReg, '<a href="<HTTP>www.nicovideo.jp/watch/$1" class="video mod_link">$1</a>')
-            .replace(seigaReg, '<a href="<HTTP>seiga.nicovideo.jp/seiga/$1" class="illust mod_link">$1</a>')
-            .replace(bookReg,  '<a href="<HTTP>seiga.nicovideo.jp/watch/$1" class="book mod_link">$1</a>')
-            .replace(urlReg,   '<a href="$1" target="_blank" class="otherSite mod_link">$1</a>')
-            .split('<HTTP>').join('http://');
+            .replace(videoReg, '<a href="//www.nicovideo.jp/watch/$1" class="video mod_link">$1</a>')
+            .replace(seigaReg, '<a href="/seiga/$1" class="illust mod_link">$1</a>')
+            .replace(bookReg,  '<a href="/watch/$1" class="book mod_link">$1</a>')
+            .replace(urlReg,   '<a href="$1" target="_blank" class="otherSite mod_link">$1</a>');
           return text;
         };
         var commentLink = function(selector) {
@@ -691,7 +690,7 @@
         };
         updatePageTopButtonVisibility();
         $(window).on('resize', updatePageTopButtonVisibility);
-       },
+      },
       initializeKnockout: function() {
       },
       initializeOther: function() {
