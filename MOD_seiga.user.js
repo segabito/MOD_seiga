@@ -6,9 +6,12 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.15
+// @version     0.2.20
 // @grant       none
 // ==/UserScript==
+
+// ver 0.2.20
+// - 新バージョンに対応
 
 // ver 0.2.13
 // - クリップの向きが変わったので、クリップメニューの位置を設定できるようにした
@@ -223,9 +226,7 @@
           }
 
           {* 画面が狭いときに操作不能になる部分などを直す *}
-          .MOD_Seiga .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
-            padding-bottom: 150px; {* 一番下のコメントが見切れるのを対策 *}
-          }
+
           .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
             position: fixed;
             right: 25px;
@@ -348,18 +349,12 @@
           box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
           display: block;
           margin-top: 20px;
-          margin-bottom: 20px;
+          {*margin-bottom: 20px;*}
           margin-left: auto;
           margin-right: auto;
           padding: 15px;
           position: relative;
           width: 974px;
-        }
-
-        .MOD_Seiga .im_head_bar .inner .user {
-          right: 15px;
-          transform:         scale(1.5); transform-origin:         100% 0 0;
-          -webkit-transform: scale(1.5); -webkit-transform-origin: 100% 0 0;
         }
 
 
@@ -545,25 +540,25 @@
 //        var $illust_main = $('.illust_main:first').detach();
 //        $('#detail .illust_info:first').after($illust_main);
 
-        var tagPos = this.config.get('tagPosition');
-        if (tagPos !== 'default') {
-          var $subInfo = $('#detail .illust_sub_info').detach();
-          if (tagPos === 'top') {
-            $subInfo.addClass('mod_tag-top');
-            $('#detail .detail_inner .illust_wrapper .inner').before($subInfo);
-          } else
-          if (tagPos === 'description-bottom' || tagPos === 'description-right') {
-            $subInfo.addClass('mod_tag-' + tagPos);
-            $('.description').addClass('mod_tag-' + tagPos);
-            $description.after($subInfo);
-          }
-        }
+//        var tagPos = this.config.get('tagPosition');
+//        if (tagPos !== 'default') {
+//          var $subInfo = $('#detail .illust_sub_info').detach();
+//          if (tagPos === 'top') {
+//            $subInfo.addClass('mod_tag-top');
+//            $('#detail .detail_inner .illust_wrapper .inner').before($subInfo);
+//          } else
+//          if (tagPos === 'description-bottom' || tagPos === 'description-right') {
+//            $subInfo.addClass('mod_tag-' + tagPos);
+//            $('.description').addClass('mod_tag-' + tagPos);
+//            $description.after($subInfo);
+//          }
+//        }
 
         $('#related_info').after($('#ichiba_box'));
 
-        if (this.config.get('clipPosition') === 'top') {
-          $('#ko_comment').before($('#ko_clip').addClass('mod_top'));
-        }
+//        if (this.config.get('clipPosition') === 'top') {
+//          $('#ko_comment').before($('#ko_clip').addClass('mod_top'));
+//        }
 
         if (this.config.get('hideBottomUserInfo') === true) {
           $('#ko_watchlist_info').addClass('mod_hide');
@@ -742,18 +737,19 @@
             </div>
 
             <div class="item" data-setting-name="clipPosition" data-menu-type="radio">
-              <h3 class="itemTitle">クリップ登録メニューの位置</h3>
+              <h3 class="itemTitle">クリップ登録メニューの位置(旧verのみ)</h3>
               <label><input type="radio" value="&quot;top&quot;" >上</label>
               <label><input type="radio" value="&quot;bottom&quot;">下</label>
             </div>
-
+            <!--
             <div class="item" data-setting-name="tagPosition" data-menu-type="radio">
-              <h3 class="itemTitle">タグの位置 </h3>
+              <h3 class="itemTitle">タグの位置(旧verのみ) </h3>
               <label><input type="radio" value="&quot;description-bottom&quot;">説明文の下</label>
               <label><input type="radio" value="&quot;description-right&quot;">説明文の右</label>
               <label><input type="radio" value="&quot;top&quot;">画像の上</label>
               <label><input type="radio" value="&quot;default&quot;">画像の下(標準)</label>
             </div>
+            -->
 
             <div class="expert">
               <h2>上級者向け設定</h2>
