@@ -6,11 +6,12 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.20
+// @version     0.2.21
 // @grant       none
 // ==/UserScript==
 
 // ver 0.2.20
+// ver 0.2.21
 // - 新バージョンに対応
 
 // ver 0.2.13
@@ -86,7 +87,7 @@
         if (path.indexOf('/seiga/') === 0) {
           this.initializeSeigaView();
         } else
-        if (path.indexOf('/illust/') === 0) {
+        if (path.indexOf('/illust/') === 0 && path.indexOf('ranking') < 0) {
           this.initializeIllustTop();
         } else
         if (path.indexOf('/tag/') === 0) {
