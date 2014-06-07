@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name        MOD_Seiga
 // @namespace   https://github.com/segabito/
-// @description MOD_Seiga
+// @description ニコニコ静画のUIをいじる
 // @include     http://seiga.nicovideo.jp/seiga/*
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.2.21
+// @version     0.3.0
 // @grant       none
 // ==/UserScript==
 
@@ -108,6 +108,7 @@
           this.initializeThumbnail();
           this.initializePageTopButton();
           this.initializeKnockout();
+          this.initializeFullScreenRequest();
 
           this.initializeOther();
           this.initializeSettingPanel();
@@ -161,6 +162,34 @@
         head = head[0];
         head.appendChild(elm);
         return elm;
+      },
+      fullScreen: {
+        now: function() {
+          if (document.fullScreenElement || document.mozFullScreen || document.webkitIsFullScreen) {
+            return true;
+          }
+          return false;
+        },
+        request: function(target) {
+          var elm = typeof target === 'string' ? document.getElementById(target) : target;
+          if (!elm) { return; }
+          if (elm.requestFullScreen) {
+            elm.requestFullScreen();
+          } else if (elm.webkitRequestFullScreen) {
+            elm.webkitRequestFullScreen();
+          } else if (elm.mozRequestFullScreen) {
+            elm.mozRequestFullScreen();
+          }
+        },
+        cancel: function() {
+          if (document.cancelFullScreen) {
+            document.cancelFullScreen();
+          } else if (document.webkitCancelFullScreen) {
+            document.webkitCancelFullScreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          }
+        }
       },
       initializeCss: function() {
         var __common_css__ = (function() {/*
@@ -243,6 +272,9 @@
           .MOD_Seiga.mod_underXGA .comment_all .comment_all_header .control{
             position: fixed; top: 35px; right: 25px; {* 横幅が狭いと閉じるを押せない問題の対応 *}
           }
+
+
+
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
         var __css__ = (function() {/*
@@ -493,10 +525,60 @@
           background-size: cover;
         }
 
+        .MOD_Seiga .toggleFullScreen {
+          display: block;
+          width: 200px;
+          margin: auto;
+          transition: 0.4s opacity, 0.4s box-shadow;
+        }
+        .MOD_Seiga_FullView .toggleFullScreen {
+          position: fixed;
+          top: 0;
+          left: 0;
+          z-index: 1000;
+          margin: 0;
+          padding: 4px;
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          color: #0CA5D2;
+          font-weight: bolder;
+        }
+        .MOD_Seiga .toggleFullScreen:hover {
+          box-shadow: 2px 2px 2px #333;
+        }
+
+        .MOD_Seiga_FullView .toggleFullScreen button {
+          opacity: 0;
+          margin: 0;
+          padding: 0;
+          cursor: pointer;
+          transition: 0.4s opacity, 0.4s box-shadow;
+          border: 1px solid #000;
+          background: #fff;
+          color: #0CA5D2;
+          font-weight: bolder;
+        }
+        .MOD_Seiga_FullView .toggleFullScreen.show button,
+        .MOD_Seiga_FullView .toggleFullScreen button:hover {
+          opacity: 1;
+          box-shadow: 2px 2px 2px #333;
+        }
+        .MOD_Seiga_FullView:fullscreen .toggleFullScreen {
+          display: none;
+        }
+
         #pagetop.mod_hide { display: none !important; }
 
         #ko_watchlist_info.mod_hide { display: none !important; }
 
+        .fullScreenRequestFrame {
+          position: fixed;
+          width: 100px;
+          height: 100px;
+          left: -999px;
+          top: -999px;
+        }
 
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
@@ -689,6 +771,58 @@
       },
       initializeKnockout: function() {
       },
+      initializeFullScreenRequest: function() {
+        var $body = $('body');
+        var $iframe = $('<iframe allowfullscreen="on" class="fullScreenRequestFrame" name="fullScreenRequestFrame"></iframe>');
+
+        $body.append($iframe);
+
+        $iframe[0].contentWindow.location.replace($('#illust_link').attr('href'));
+        var $fullScreenButton = $([
+          '<button class="toggleFullScreen btn normal" title="フルスクリーン表示に切り換えます(Fキー)">',
+            '<span>フルスクリーン</span>',
+          '</button>',
+          ''].join(''));
+        $('.illust_main .illust_wrapper .inner .thum_large:first').append($fullScreenButton);
+        var toggleFullScreen = $.proxy(function() {
+          if (this.fullScreen.now()) {
+            this.fullScreen.cancel();
+          } else {
+            this.fullScreen.request($iframe[0]);
+          }
+        }, this);
+        $fullScreenButton.on('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleFullScreen();
+        });
+
+        var onMessage = function(event) {
+          if (event.origin.indexOf('nicoseiga.jp') < 0) return;
+          try {
+            var data = JSON.parse(event.data);
+            if (data.id !== 'MOD_Seiga') { return; }
+            if (data.command === 'toggleFullScreen') {
+              console.log('3');
+              toggleFullScreen();
+            }
+          } catch (e) {
+            console.log('Exception', e);
+            console.trace();
+          }
+        };
+
+        window.addEventListener('message', onMessage);
+        $body.on('keydown.watchItLater', function(e) {
+          if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            return;
+          }
+          if (e.keyCode === 70) {  // F
+            toggleFullScreen();
+          }
+        });
+
+       },
       initializeOther: function() {
         $('body').addClass('MOD_Seiga');
       },
@@ -787,6 +921,13 @@
       },
       initializeFullscreenImage: function() {
         var $body = $('body'), $container = $('.illust_view_big'), $img = $container.find('img'), scale = 1;
+        var $fullScreenButton = $([
+          '<div class="toggleFullScreen show">',
+           '<button title="フルスクリーン表示に切り換えます">',
+              '<span>フルスクリーン</span>',
+            '</button>',
+          '</div>',
+          ''].join(''));
         var width = $img.outerWidth, height = $img.outerHeight();
         var $window = $(window);
         $('.controll').addClass('control');
@@ -813,7 +954,6 @@
           $container.width($window.innerWidth());
           $container.height($window.innerHeight());
 //          $container.css('background-image', 'url("' + $img.attr('src') + '")');
-
         };
         var cover = function() {
           clearCss();
@@ -857,6 +997,37 @@
             cover();
           }
         };
+        var toggleFullScreen = $.proxy(function() {
+          if (window.name === 'fullScreenRequestFrame') {
+            parent.postMessage(JSON.stringify({
+              id: 'MOD_Seiga',
+              command: 'toggleFullScreen'
+            }),
+            'http://seiga.nicovideo.jp');
+            return;
+          }
+
+          if (this.fullScreen.now()) {
+            this.fullScreen.cancel(document.documentElement);
+          } else {
+            this.fullScreen.request(document.documentElement);
+          }
+        }, this);
+        window.setTimeout($.proxy(function() {
+          $fullScreenButton.removeClass('show');
+        }, this), 2000);
+        if (window.name === 'fullScreenRequestFrame') {
+          $('img[src$="btn_close.png"]').off().on('click', function() {
+            toggleFullScreen();
+          });
+        }
+
+        $fullScreenButton.on('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleFullScreen();
+        });
+        $body.append($fullScreenButton);
 
         contain();
         $img.on('click', onclick);
@@ -865,7 +1036,6 @@
           update();
           $img.off('load.MOD_Seiga');
         });
-
         var hasWheelDeltaX = false;
 
         // おもにwindows等、縦ホイールしかない環境で横スクロールしやすくする
