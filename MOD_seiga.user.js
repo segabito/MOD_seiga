@@ -6,7 +6,7 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.3.0
+// @version     0.3.1
 // @grant       none
 // ==/UserScript==
 
@@ -580,6 +580,28 @@
           top: -999px;
         }
 
+        .MOD_Seiga_FullView  .closeButton {
+          opacity: 0;
+          transition: 0.4s opacity ease;
+        }
+
+        .MOD_Seiga_FullView  .closeButton:hover {
+          opacity: 1;
+        }
+
+        body.fullScreenFrame {
+          background: #000;
+        }
+
+        body.MOD_Seiga_FullView img {
+          cursor: none;
+        }
+
+        body.MOD_Seiga_FullView.mouseMoving img{
+          cursor: default;
+        }
+
+
 */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
 
 
@@ -777,7 +799,6 @@
 
         $body.append($iframe);
 
-        $iframe[0].contentWindow.location.replace($('#illust_link').attr('href'));
         var $fullScreenButton = $([
           '<button class="toggleFullScreen btn normal" title="フルスクリーン表示に切り換えます(Fキー)">',
             '<span>フルスクリーン</span>',
@@ -788,6 +809,7 @@
           if (this.fullScreen.now()) {
             this.fullScreen.cancel();
           } else {
+            $iframe[0].contentWindow.location.replace($('#illust_link').attr('href'));
             this.fullScreen.request($iframe[0]);
           }
         }, this);
@@ -1017,9 +1039,13 @@
           $fullScreenButton.removeClass('show');
         }, this), 2000);
         if (window.name === 'fullScreenRequestFrame') {
-          $('img[src$="btn_close.png"]').off().on('click', function() {
-            toggleFullScreen();
-          });
+          $('img[src$="btn_close.png"]')
+            .addClass('closeButton')
+            .off()
+            .on('click', function() {
+              toggleFullScreen();
+            });
+          $('body').addClass('fullScreenFrame');
         }
 
         $fullScreenButton.on('click', function(e) {
@@ -1029,12 +1055,31 @@
         });
         $body.append($fullScreenButton);
 
+
+        // マウスを動かさない時はカーソルを消す
+        var mousemoveStopTimer = null;
+        var showMouseNsec = function() {
+          $body.addClass('mouseMoving');
+          if (mousemoveStopTimer) {
+            window.clearTimeout(mousemoveStopTimer);
+            mousemoveStopTimer = null;
+          }
+          mousemoveStopTimer = window.setTimeout(function() {
+            $body.removeClass('mouseMoving');
+            mousemoveStopTimer = null;
+          }, 1000);
+        }
+        $body
+          .on('mousemove.MOD_Seiga', showMouseNsec)
+          .on('mousedown.MOD_Seiga', showMouseNsec);
+
         contain();
         $img.on('click', onclick);
         $window.on('resize', update);
         $img.on('load.MOD_Seiga', function() {
           update();
           $img.off('load.MOD_Seiga');
+        }).on('mousemove.MOD_Seiga', function() {
         });
         var hasWheelDeltaX = false;
 
