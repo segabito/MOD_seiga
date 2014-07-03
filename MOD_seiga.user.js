@@ -6,7 +6,7 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.3.1
+// @version     0.3.2
 // @grant       none
 // ==/UserScript==
 
@@ -256,21 +256,25 @@
           }
 
           {* 画面が狭いときに操作不能になる部分などを直す *}
-
-          .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
-            position: fixed;
-            right: 25px;
-            top: 105px; bottom: 105px; overflow-y: auto;
+          @media screen and (max-width: 1023px) {
+            .mod_hidePageTopButton.MOD_Seiga .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list {
+              position: fixed;
+              right: 25px;
+              top: 105px; bottom: 105px; overflow-y: auto;
+            }
+            .mod_hidePageTopButton.MOD_Seiga .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list .text {
+              margin: 0 16px 0 0;
+            }
+            .mod_hidePageTopButton.MOD_Seiga .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .res .inner {
+              position: fixed;
+              bottom: 0; right: 5px;
+            }
+            .mod_hidePageTopButton.MOD_Seiga .comment_all .comment_all_header .control{
+              position: fixed; top: 35px; right: 25px; {* 横幅が狭いと閉じるを押せない問題の対応 *}
+            }
           }
-          .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .comment_list .text {
-            margin: 0 16px 0 0;
-          }
-          .MOD_Seiga.mod_underXGA .comment_all .comment_all_inner .illust_main .illust_side .illust_comment .res .inner {
-            position: fixed;
-            bottom: 0; right: 5px;
-          }
-          .MOD_Seiga.mod_underXGA .comment_all .comment_all_header .control{
-            position: fixed; top: 35px; right: 25px; {* 横幅が狭いと閉じるを押せない問題の対応 *}
+          @media screen and (max-width: 1183px) {
+            .mod_hidePageTopButton #pagetop { display: none !important; }
           }
 
 
@@ -568,8 +572,6 @@
           display: none;
         }
 
-        #pagetop.mod_hide { display: none !important; }
-
         #ko_watchlist_info.mod_hide { display: none !important; }
 
         .fullScreenRequestFrame {
@@ -642,38 +644,13 @@
       initializeBaseLayout: function() {
         var $description = $('#content .description, #content .discription').addClass('description');
         $('.controll').addClass('control');
-//        var $illust_main = $('.illust_main:first').detach();
-//        $('#detail .illust_info:first').after($illust_main);
-
-//        var tagPos = this.config.get('tagPosition');
-//        if (tagPos !== 'default') {
-//          var $subInfo = $('#detail .illust_sub_info').detach();
-//          if (tagPos === 'top') {
-//            $subInfo.addClass('mod_tag-top');
-//            $('#detail .detail_inner .illust_wrapper .inner').before($subInfo);
-//          } else
-//          if (tagPos === 'description-bottom' || tagPos === 'description-right') {
-//            $subInfo.addClass('mod_tag-' + tagPos);
-//            $('.description').addClass('mod_tag-' + tagPos);
-//            $description.after($subInfo);
-//          }
-//        }
 
         $('#related_info').after($('#ichiba_box'));
-
-//        if (this.config.get('clipPosition') === 'top') {
-//          $('#ko_comment').before($('#ko_clip').addClass('mod_top'));
-//        }
 
         if (this.config.get('hideBottomUserInfo') === true) {
           $('#ko_watchlist_info').addClass('mod_hide');
         }
 
-
-//        if (this.config.get('topUserInfo')) {
-//          var $watchlist_info = $('#ko_watchlist_info').detach();
-//          $('#detail .discription, #detail .discription').addClass('topUserInfo').before($watchlist_info);
-//        }
       },
       initializeScrollTop: function() {
         var $document = $(document), $body = $('body'); //, $bar = $('#bar');
@@ -780,16 +757,7 @@
         });
       },
       initializePageTopButton: function() {
-        var config = this.config;
-        var updatePageTopButtonVisibility = function() {
-          if (config.get('hidePageTopButton') !== true) { return; }
-          var threshold = 1004 + 180; // ボディ幅 + おおまかなボタン幅
-          var innerWidth = $(window).innerWidth();
-          $('#pagetop').toggleClass('mod_hide', $(window).innerWidth() < threshold);
-          $('body').toggleClass('mod_underXGA', innerWidth < 1024);
-        };
-        updatePageTopButtonVisibility();
-        $(window).on('resize', updatePageTopButtonVisibility);
+        $('body').toggleClass('mod_hidePageTopButton', this.config.get('hidePageTopButton'));
       },
       initializeKnockout: function() {
       },
@@ -950,15 +918,16 @@
             '</button>',
           '</div>',
           ''].join(''));
-        var width = $img.outerWidth, height = $img.outerHeight();
         var $window = $(window);
         $('.controll').addClass('control');
 
         var clearCss = function() {
-          $body.removeClass('mod_contain').removeClass('mod_cover').removeClass('mod_noScale');
+          $body.removeClass('mod_contain mod_cover mod_noScale');
           $container.css({width: '', height: ''});
           $img.css({'transform': '', '-webkit-transform': '', top: '', left: ''});
         };
+
+        // ウィンドウの内枠フィット (画面におさまる範囲で最大化)
         var contain = function() {
           clearCss();
           $body.addClass('mod_contain');
@@ -977,6 +946,8 @@
           $container.height($window.innerHeight());
 //          $container.css('background-image', 'url("' + $img.attr('src') + '")');
         };
+
+        // ウィンドウの外枠フィット
         var cover = function() {
           clearCss();
           $body.addClass('mod_cover').css('overflow', 'scroll');
@@ -992,6 +963,8 @@
           // ウィンドウサイズの計算にスクロールバーの幅を含めるための措置 おもにwindows用
           $body.css('overflow', '');
         };
+
+        // 原寸大表示
         var noScale = function() {
           clearCss();
           $body.addClass('mod_noScale');
@@ -999,6 +972,7 @@
           $container.css('background-image', '');
         };
 
+        // クリックごとに表示を切り替える処理
         var onclick = function(e) {
           if (e.button > 0) { return; }
           // TODO: クリックした位置が中心になるようにスクロール
@@ -1011,6 +985,7 @@
             noScale();
           }
         };
+        // ウィンドウがリサイズされた時などの再計算用
         var update = function() {
           if ($body.hasClass('mod_contain')) {
             contain();
@@ -1019,6 +994,8 @@
             cover();
           }
         };
+
+        // モニターいっぱい表示を切り換える
         var toggleFullScreen = $.proxy(function() {
           if (window.name === 'fullScreenRequestFrame') {
             parent.postMessage(JSON.stringify({
@@ -1035,9 +1012,12 @@
             this.fullScreen.request(document.documentElement);
           }
         }, this);
+
         window.setTimeout($.proxy(function() {
           $fullScreenButton.removeClass('show');
         }, this), 2000);
+
+        // /seiga/imXXXXXXからiframeで呼ばれてる時の処理
         if (window.name === 'fullScreenRequestFrame') {
           $('img[src$="btn_close.png"]')
             .addClass('closeButton')
@@ -1068,10 +1048,11 @@
             $body.removeClass('mouseMoving');
             mousemoveStopTimer = null;
           }, 1000);
-        }
+        };
         $body
           .on('mousemove.MOD_Seiga', showMouseNsec)
           .on('mousedown.MOD_Seiga', showMouseNsec);
+
 
         contain();
         $img.on('click', onclick);
@@ -1079,12 +1060,12 @@
         $img.on('load.MOD_Seiga', function() {
           update();
           $img.off('load.MOD_Seiga');
-        }).on('mousemove.MOD_Seiga', function() {
         });
-        var hasWheelDeltaX = false;
+
 
         // おもにwindows等、縦ホイールしかない環境で横スクロールしやすくする
         // Firefoxでうまくいかない
+        var hasWheelDeltaX = false;
         $(document).on('mousewheel', function(e) {
           var delta = 0;
 
