@@ -6,7 +6,7 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.3.2
+// @version     0.3.3
 // @grant       none
 // ==/UserScript==
 
@@ -78,6 +78,8 @@
   var monkey = (function(){
     'use strict';
     var $ = window.jQuery;
+
+    var A4_WIDTH = 210, A4_HEIGHT = 297;
 
 
     window.MOD_Seiga = {
@@ -277,6 +279,83 @@
             .mod_hidePageTopButton #pagetop { display: none !important; }
           }
 
+
+          @media print {
+            body {
+              background: #000 !important; {* 背景を黒にしたい場合は「背景画像を印刷」にチェック *}
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+              width: 210mm;
+              height: calc(297mm - 19mm); {* 19mmは印刷マージン *}
+            }
+            body.landscape {
+              width: 297mm;
+              height: calc(210mm - 19mm);
+            }
+            .toggleFullScreen, .control {
+              display: none !important;
+              opacity: 0 !important;
+            }
+
+            .MOD_Seiga_FullView .illust_view_big img {
+              top: 0 !important;
+              left: 0 !important;
+              transform: inherit !important;
+              -webkit-transform: inherit !important;
+            }
+
+            .MOD_Seiga_FullView:not(.landscape) .illust_view_big img {
+              width: auto;
+              height: auto;
+            }
+            .MOD_Seiga_FullView:not(.landscape).fitV .illust_view_big img {
+              {*width: auto;
+              height: calc(297mm - 19mm); *}
+            }
+            .MOD_Seiga_FullView.landscape .illust_view_big img {
+              {*width: 297mm;
+              height: auto; *}
+            }
+            .MOD_Seiga_FullView.landscape.fitV .illust_view_big img {
+              {*width: auto;
+              height: calc(210mm - 19mm); *}
+              margin-top: 0;
+            }
+          }
+
+          {* 用紙を縦にするか横にするかで変えたかった *}
+          {*
+          @media print and (max-width: 210mm) {
+            .MOD_Seiga_FullView   .illust_view_big,
+            body {
+              width: 210mm;
+              height: 297mm;
+            }
+
+            .MOD_Seiga_FullView .illust_view_big img {
+              width: 210mm !important;
+              height: auto !important;
+              margin-top: calc(297mm / 2 - 50%);
+            }
+          }
+          *}
+
+          {*
+          @media print and (min-width: 211mm) {
+            .MOD_Seiga_FullView   .illust_view_big,
+            body {
+              width: 297mm;
+              height: 210mm;
+            }
+
+            .MOD_Seiga_FullView .illust_view_big img {
+              width: auto !important;
+              height: 210mm !important;
+              margin-left: calc(210mm / 2 - 50%);
+            }
+          }
+          *}
 
 
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
@@ -973,7 +1052,7 @@
         };
 
         // クリックごとに表示を切り替える処理
-        var onclick = function(e) {
+        var onClick = function(e) {
           if (e.button > 0) { return; }
           // TODO: クリックした位置が中心になるようにスクロール
           if ($body.hasClass('mod_noScale')) {
@@ -1055,12 +1134,13 @@
 
 
         contain();
-        $img.on('click', onclick);
+        $img.on('click', onClick);
         $window.on('resize', update);
-        $img.on('load.MOD_Seiga', function() {
-          update();
+        $img.on('load.MOD_Seiga', $.proxy(function() {
+          this.initializePrintCss($img.clone());
+          contain();
           $img.off('load.MOD_Seiga');
-        });
+        }, this));
 
 
         // おもにwindows等、縦ホイールしかない環境で横スクロールしやすくする
@@ -1094,6 +1174,65 @@
           var scrollLeft = $body.scrollLeft() - (delta * $window.innerWidth() / 10);
           $body.scrollLeft(Math.max(scrollLeft, 0));
         });
+      },
+      initializePrintCss: function($img) {
+        this.initializePrintCss = function() {};
+        var self = this;
+
+        $img.css({
+          width: 'auto', height: 'auto',
+          transform: '', left: '100%', top: '100%', opacity: 0, position: 'fixed'
+        });
+
+        var $body = $('body');
+        $body.append($img);
+
+        window.setTimeout(function() {
+          var width = $img.outerWidth(), height = $img.outerHeight();
+          $img.remove();
+
+          // TODO: 用紙サイズ変更
+          var paperMarginV = 0.1; // 19; // 紙送りマージン？
+          var imageRatio = height / Math.max(width, 1);
+          var paperRatio     = (A4_HEIGHT - paperMarginV) / A4_WIDTH;
+          var landscapeRatio = (A4_WIDTH  - paperMarginV) / A4_HEIGHT;
+          var isLandscape =
+            Math.abs(paperRatio - imageRatio) > Math.abs(landscapeRatio - imageRatio);
+
+          paperRatio = isLandscape ? landscapeRatio : paperRatio;
+
+          var isFitV = paperRatio < imageRatio;
+          var paperWidth  = isLandscape ? A4_HEIGHT : A4_WIDTH;
+          var paperHeight = (isLandscape ? A4_WIDTH : A4_HEIGHT) - paperMarginV;
+          var marginLeft = 0, marginTop = 0, imageWidth = paperWidth, imageHeight = paperHeight;
+
+          if (isFitV) { // タテ合わせ
+            imageWidth = paperHeight / imageRatio;
+            marginLeft = (paperWidth - imageWidth) / 2;
+          } else { // ヨコ合わせ
+            imageHeight = paperWidth * imageRatio;
+            marginTop = (paperHeight - imageHeight) / 2;
+          }
+          var css = [
+              '@media print {\n',
+                '.MOD_Seiga_FullView .illust_view_big img {\n  ',
+                  'margin-left: ', marginLeft, 'mm; ',
+                  'margin-top: ', marginTop, 'mm; ',
+                  'width:',  imageWidth,  'mm !important; ',
+                  'height:', imageHeight, 'mm !important;',
+                '\n}\n',
+              '}',
+            ].join('');
+
+          //console.log('paper?', paperWidth, paperHeight, imageWidth, imageHeight);
+          //console.log('ratio?', width, height, isLandscape, paperRatio, imageRatio);
+          //console.log('print css', css);
+
+          self._printCss = self.addStyle(css, 'MOD_Seiga_print');
+          $body
+            .toggleClass('landscape', isLandscape)
+            .toggleClass('fitV', isFitV);
+        }, 100);
       }
     };
 
