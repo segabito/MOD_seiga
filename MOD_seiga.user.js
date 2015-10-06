@@ -6,7 +6,7 @@
 // @include     http://seiga.nicovideo.jp/tag/*
 // @include     http://seiga.nicovideo.jp/illust/*
 // @include     http://lohas.nicoseiga.jp/o/*
-// @version     0.3.3
+// @version     0.3.4
 // @grant       none
 // ==/UserScript==
 
@@ -279,19 +279,19 @@
             .mod_hidePageTopButton #pagetop { display: none !important; }
           }
 
-
           @media print {
+
             body {
               background: #000 !important; {* 背景を黒にしたい場合は「背景画像を印刷」にチェック *}
               margin: 0;
               padding: 0;
               overflow: hidden;
               width: 210mm;
-              height: calc(297mm - 19mm); {* 19mmは印刷マージン *}
+                     {* height: calc(297mm - 19mm); *} {* 19mmは印刷マージン *}
             }
             body.landscape {
               width: 297mm;
-              height: calc(210mm - 19mm);
+                     {* height: calc(210mm - 19mm); *}
             }
             .toggleFullScreen, .control {
               display: none !important;
@@ -323,39 +323,6 @@
               margin-top: 0;
             }
           }
-
-          {* 用紙を縦にするか横にするかで変えたかった *}
-          {*
-          @media print and (max-width: 210mm) {
-            .MOD_Seiga_FullView   .illust_view_big,
-            body {
-              width: 210mm;
-              height: 297mm;
-            }
-
-            .MOD_Seiga_FullView .illust_view_big img {
-              width: 210mm !important;
-              height: auto !important;
-              margin-top: calc(297mm / 2 - 50%);
-            }
-          }
-          *}
-
-          {*
-          @media print and (min-width: 211mm) {
-            .MOD_Seiga_FullView   .illust_view_big,
-            body {
-              width: 297mm;
-              height: 210mm;
-            }
-
-            .MOD_Seiga_FullView .illust_view_big img {
-              width: auto !important;
-              height: 210mm !important;
-              margin-left: calc(210mm / 2 - 50%);
-            }
-          }
-          *}
 
 
         */}).toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/\{\*/g, '/*').replace(/\*\}/g, '*/');
@@ -872,7 +839,6 @@
             var data = JSON.parse(event.data);
             if (data.id !== 'MOD_Seiga') { return; }
             if (data.command === 'toggleFullScreen') {
-              console.log('3');
               toggleFullScreen();
             }
           } catch (e) {
@@ -1136,11 +1102,17 @@
         contain();
         $img.on('click', onClick);
         $window.on('resize', update);
-        $img.on('load.MOD_Seiga', $.proxy(function() {
+        var onImageLoad = $.proxy(function() {
           this.initializePrintCss($img.clone());
           contain();
           $img.off('load.MOD_Seiga');
-        }, this));
+        }, this);
+
+        if ($img[0] && $img[0].complete) {
+          onImageLoad();
+        } else {
+          $img.on('load.MOD_Seiga', onImageLoad);
+        }
 
 
         // おもにwindows等、縦ホイールしかない環境で横スクロールしやすくする
@@ -1192,7 +1164,7 @@
           $img.remove();
 
           // TODO: 用紙サイズ変更
-          var paperMarginV = 0.1; // 19; // 紙送りマージン？
+          var paperMarginV = 0; //0.1; // 19; // 紙送りマージン？
           var imageRatio = height / Math.max(width, 1);
           var paperRatio     = (A4_HEIGHT - paperMarginV) / A4_WIDTH;
           var landscapeRatio = (A4_WIDTH  - paperMarginV) / A4_HEIGHT;
@@ -1213,20 +1185,22 @@
             imageHeight = paperWidth * imageRatio;
             marginTop = (paperHeight - imageHeight) / 2;
           }
+          var pageSize = isLandscape ? 'A4 lanscape' : 'A4';
           var css = [
+              '@page { margin: 0; size: ', pageSize, '; }\n\n ',
               '@media print {\n',
-                '.MOD_Seiga_FullView .illust_view_big img {\n  ',
-                  'margin-left: ', marginLeft, 'mm; ',
-                  'margin-top: ', marginTop, 'mm; ',
-                  'width:',  imageWidth,  'mm !important; ',
-                  'height:', imageHeight, 'mm !important;',
-                '\n}\n',
+                '\t.MOD_Seiga_FullView .illust_view_big img {\n  ',
+                  '\t\tmargin-left: ', marginLeft, 'mm; ',
+                  '\t\tmargin-top: ', marginTop, 'mm; ',
+                  '\t\twidth:',  imageWidth,  'mm !important; ',
+                  '\t\theight:', imageHeight, 'mm !important;',
+                '\t\n}\n',
               '}',
             ].join('');
 
           //console.log('paper?', paperWidth, paperHeight, imageWidth, imageHeight);
           //console.log('ratio?', width, height, isLandscape, paperRatio, imageRatio);
-          //console.log('print css', css);
+          console.log('print css\n', css);
 
           self._printCss = self.addStyle(css, 'MOD_Seiga_print');
           $body
